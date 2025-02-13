@@ -1,139 +1,103 @@
-import os
-import zipfile
-import subprocess
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 
-# Ensure required packages are installed
+# Install required packages
 st.write("Installing required packages...")
-subprocess.run(["pip", "install", "pandas", "numpy", "matplotlib", "seaborn", "scikit-learn", "pyarrow", "fastparquet"], check=True)
+import os
+os.system("pip install streamlit pandas matplotlib seaborn numpy scikit-learn")
 
 # Streamlit UI
 st.title("Temperature Data Analysis and Prediction")
 
-# Upload CSV File
-uploaded_file = st.file_uploader("Upload your CSV or ZIP file", type=["csv", "zip", "parquet"])
-if uploaded_file is not None:
-    file_extension = uploaded_file.name.split(".")[-1]
-    
-    if file_extension == "zip":
-        with zipfile.ZipFile(uploaded_file, "r") as zip_ref:
-            zip_ref.extractall("./")
-            extracted_files = [f for f in zip_ref.namelist() if f.endswith(".csv")]
-            if extracted_files:
-                csv_file = extracted_files[0]
-                df = pd.read_csv(csv_file)
-            else:
-                st.error("No CSV file found in the ZIP.")
-                st.stop()
-    elif file_extension == "parquet":
-        df = pd.read_parquet(uploaded_file)
-    else:
-        df = pd.read_csv(uploaded_file)
-    
-    if df.empty:
-        st.error("Uploaded file is empty or invalid.")
-        st.stop()
-    
-    st.write("### Data Preview")
+# File uploader
+uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+    st.write("### Data Overview")
     st.write(df.head())
     
-    # Optimize Data Types
-    for col in df.select_dtypes(include=['float64']).columns:
-        df[col] = df[col].astype('float32')
-    for col in df.select_dtypes(include=['int64']).columns:
-        df[col] = df[col].astype('int32')
+    # Data Description
+    st.write("### Dataset Description")
+    st.write(df.describe())
     
     # Data Info
-    st.write("### Data Description")
-    st.write(df.describe())
-    st.write("Missing Values:")
+    st.write("### Dataset Info")
+    st.write(df.info())
+    
+    # Missing Values
+    st.write("### Missing Values")
     st.write(df.isnull().sum())
-    st.write("Duplicate Rows:", df.duplicated().sum())
     
     # Boxplot
-    st.write("### Boxplot")
+    st.write("### Boxplot of Data")
     fig, ax = plt.subplots(figsize=(16, 8))
     sns.boxplot(data=df, ax=ax)
     st.pyplot(fig)
     
-    # Min-Max Scaling
+    # Min-Max Normalization
     scaler = MinMaxScaler()
-    normalized_data = scaler.fit_transform(df)
-    df_normalized = pd.DataFrame(normalized_data, columns=df.columns)
-    st.write("### Normalized Data")
-    st.write(df_normalized.head())
-    
-    # Outlier Removal using IQR
-    Q1 = df.quantile(0.25)
-    Q3 = df.quantile(0.75)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-    df_cleaned = df[(df >= lower_bound) & (df <= upper_bound)].copy()
-    df_cleaned.dropna(inplace=True)
-    st.write("### Data after Outlier Removal")
-    st.write(df_cleaned.head())
+    normalized_data = scaler.fit_transform(df.select_dtypes(include=[np.number]))
+    normalized_df = pd.DataFrame(normalized_data, columns=df.select_dtypes(include=[np.number]).columns)
     
     # Handling Missing Values
-    df_filled = df_cleaned.fillna(df_cleaned.mean())
-    st.write("### Data after Handling Missing Values")
-    st.write(df_filled.isna().sum())
+    df_cleaned = df.fillna(df.mean())
     
-    # Correlation Heatmap
-    corr_matrix = df_filled.corr()
+    # Correlation Matrix
+    corr_matrix = df_cleaned.corr()
     st.write("### Correlation Matrix")
     fig, ax = plt.subplots(figsize=(10, 8))
     sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5, ax=ax)
     st.pyplot(fig)
     
-    # Model Training
-    features = ['ambient', 'u_d', 'u_q', 'i_d', 'i_q', 'pm', 'stator_winding']
-    target = 'motor_speed'
+    # Feature Selection
+    X = df_cleaned[['ambient', 'u_d', 'u_q', 'i_d', 'i_q', 'pm', 'stator_winding']]
+    y = df_cleaned['motor_speed']
     
-    missing_cols = [col for col in features + [target] if col not in df_filled.columns]
-    if missing_cols:
-        st.error(f"Missing columns in dataset: {missing_cols}")
-        st.stop()
-    
-    X = df_filled[features]
-    y = df_filled[target]
+    # Train-Test Split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-# Model Selection (RandomForest & GradientBoosting)
-# Model Selection (RandomForest & GradientBoosting)
-models = {
-    "RandomForest": RandomForestRegressor(n_estimators=100, random_state=42),
-    "GradientBoosting": GradientBoostingRegressor(n_estimators=100, random_state=42)
-}
-
-# Initialize a list to store model results
-model_results = []
-
-# Iterate over models, train them, and store results
-for name, model in models.items():
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    rmse = np.sqrt(mean_squared_error(y_test, predictions))
-    r2 = r2_score(y_test, predictions)
+    # Model Selection
+    model_choice = st.selectbox("Select a Model", ["Linear Regression", "Ridge", "Lasso", "RandomForest", "GradientBoosting"])
     
-    # Append results to the list
-    model_results.append({"Model": name, "RMSE": round(rmse, 4), "R²": round(r2, 4)})
-
-# Display results in Streamlit
-st.write("### Model Comparison")
-st.table(pd.DataFrame(model_results))
-
-# Print results to console
-print("### Model Comparison Results ###")
-print(pd.DataFrame(model_results))
-
+    if model_choice == "Linear Regression":
+        model = LinearRegression()
+    elif model_choice == "Ridge":
+        model = Ridge(alpha=1.0)
+    elif model_choice == "Lasso":
+        model = Lasso(alpha=0.1)
+    elif model_choice == "RandomForest":
+        model = RandomForestRegressor(n_estimators=50, max_depth=5, random_state=42)
+    else:
+        model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
+    
+    # Train Model
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    
+    # Model Performance
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
+    r2 = r2_score(y_test, y_pred)
+    
+    st.write(f"**Mean Squared Error:** {mse:.4f}")
+    st.write(f"**Root Mean Squared Error:** {rmse:.4f}")
+    st.write(f"**R² Score:** {r2:.4f}")
+    
+    # Predictions
+    st.write("### Actual vs Predicted")
+    fig, ax = plt.subplots()
+    ax.scatter(y_test, y_pred)
+    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r', lw=2)
+    ax.set_xlabel("Actual")
+    ax.set_ylabel("Predicted")
+    st.pyplot(fig)

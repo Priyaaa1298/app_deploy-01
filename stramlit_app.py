@@ -103,33 +103,21 @@ if uploaded_file is not None:
     y = df_filled[target]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Linear Regression
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    
-    mse = mean_squared_error(y_test, y_pred)
-    rmse = np.sqrt(mse)
-    r2 = r2_score(y_test, y_pred)
-    
-    st.write("### Linear Regression Results")
-    st.write(f"Mean Squared Error: {mse:.4f}")
-    st.write(f"Root Mean Squared Error: {rmse:.4f}")
-    st.write(f"R² Score: {r2:.4f}")
-    
     # Model Selection (RandomForest & GradientBoosting)
     models = {
-        "RandomForest": RandomForestRegressor(random_state=42),
-        "GradientBoosting": GradientBoostingRegressor(random_state=42)
+        "RandomForest": RandomForestRegressor(n_estimators=100, random_state=42),
+        "GradientBoosting": GradientBoostingRegressor(n_estimators=100, random_state=42)
     }
     
-    model_results = {}
+    model_results = []
     for name, model in models.items():
         model.fit(X_train, y_train)
         predictions = model.predict(X_test)
         rmse = np.sqrt(mean_squared_error(y_test, predictions))
         r2 = r2_score(y_test, predictions)
-        model_results[name] = {"RMSE": rmse, "R²": r2}
+        model_results.append({"Model": name, "RMSE": rmse, "R²": r2})
     
     st.write("### Model Comparison")
     st.write(pd.DataFrame(model_results))
+print("### Model Comparison Results ###")
+print(pd.DataFrame(model_results))

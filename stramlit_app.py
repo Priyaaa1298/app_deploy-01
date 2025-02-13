@@ -109,23 +109,31 @@ if uploaded_file is not None:
     y = df_filled[target]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Model Selection (RandomForest & GradientBoosting)
-    models = {
-        "RandomForest": RandomForestRegressor(n_estimators=100, random_state=42),
-        "GradientBoosting": GradientBoostingRegressor(n_estimators=100, random_state=42)
-    }
+# Model Selection (RandomForest & GradientBoosting)
+# Model Selection (RandomForest & GradientBoosting)
+models = {
+    "RandomForest": RandomForestRegressor(n_estimators=100, random_state=42),
+    "GradientBoosting": GradientBoostingRegressor(n_estimators=100, random_state=42)
+}
 
-    result_append = modules.append(model_results)
-    model_results = []
-    for name, model in models.items():
-        model.fit(X_train, y_train)
-        predictions = model.predict(X_test)
-        rmse = np.sqrt(mean_squared_error(y_test, predictions))
-        r2 = r2_score(y_test, predictions)
-        model_results.append({"Model": name, "RMSE": round(rmse, 4), "R²": round(r2, 4)})
+# Initialize a list to store model results
+model_results = []
+
+# Iterate over models, train them, and store results
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    rmse = np.sqrt(mean_squared_error(y_test, predictions))
+    r2 = r2_score(y_test, predictions)
     
-    st.write("### Model Comparison")
-    st.table(pd.DataFrame(model_results))
-    
-    print("### Model Comparison Results ###")
-    print(pd.DataFrame(model_results))
+    # Append results to the list
+    model_results.append({"Model": name, "RMSE": round(rmse, 4), "R²": round(r2, 4)})
+
+# Display results in Streamlit
+st.write("### Model Comparison")
+st.table(pd.DataFrame(model_results))
+
+# Print results to console
+print("### Model Comparison Results ###")
+print(pd.DataFrame(model_results))
+

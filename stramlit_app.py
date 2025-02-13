@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 st.title("Temperature Data Analysis and Prediction")
 
 # Upload CSV File
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+uploaded_file = st.file_uploader("https://drive.google.com/file/d/1xSVx4AGebE0C_2K9ZP9aZ2Kq9df_qBnn/view?usp=drive_link", type=["csv"])
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.write("### Data Preview")

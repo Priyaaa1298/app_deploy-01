@@ -16,7 +16,7 @@ import os
 os.system("pip install streamlit pandas matplotlib seaborn numpy scikit-learn")
 
 # Streamlit UI
-st.title("Temperature Data Analysis and Prediction")
+st.title("Electric motor Speed Prediction")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])

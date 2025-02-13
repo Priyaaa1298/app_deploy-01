@@ -12,10 +12,6 @@ from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 import zipfile
 import os
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 
 # Streamlit UI
 st.title("Temperature Data Analysis and Prediction")
@@ -38,7 +34,6 @@ if uploaded_file is not None:
     
     st.write("### Data Preview")
     st.write(df.head())
-    logging.info("Data preview displayed")
     
     # Optimize Data Types
     for col in df.select_dtypes(include=['float64']).columns:
@@ -58,7 +53,6 @@ if uploaded_file is not None:
     fig, ax = plt.subplots(figsize=(16, 8))
     sns.boxplot(data=df, ax=ax)
     st.pyplot(fig)
-    logging.info("Boxplot displayed")
     
     # Min-Max Scaling
     scaler = MinMaxScaler()
@@ -66,7 +60,6 @@ if uploaded_file is not None:
     df_normalized = pd.DataFrame(normalized_data, columns=df.columns)
     st.write("### Normalized Data")
     st.write(df_normalized.head())
-    logging.info("Data normalized")
     
     # Outlier Removal using IQR
     Q1 = df.quantile(0.25)
@@ -77,13 +70,11 @@ if uploaded_file is not None:
     df_cleaned = df[(df >= lower_bound) & (df <= upper_bound)]
     st.write("### Data after Outlier Removal")
     st.write(df_cleaned.head())
-    logging.info("Outliers removed")
     
     # Handling Missing Values
     df_filled = df_cleaned.fillna(df_cleaned.mean())
     st.write("### Data after Handling Missing Values")
     st.write(df_filled.isna().sum())
-    logging.info("Missing values handled")
     
     # Correlation Heatmap
     corr_matrix = df_filled.corr()
@@ -91,7 +82,6 @@ if uploaded_file is not None:
     fig, ax = plt.subplots(figsize=(10, 8))
     sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5, ax=ax)
     st.pyplot(fig)
-    logging.info("Correlation matrix displayed")
     
     # Model Training
     features = ['ambient', 'u_d', 'u_q', 'i_d', 'i_q', 'pm', 'stator_winding']
@@ -113,7 +103,6 @@ if uploaded_file is not None:
     st.write(f"Mean Squared Error: {mse:.4f}")
     st.write(f"Root Mean Squared Error: {rmse:.4f}")
     st.write(f"R² Score: {r2:.4f}")
-    logging.info("Linear regression model trained and evaluated")
     
     # Model Selection (RandomForest & GradientBoosting)
     models = {
@@ -128,8 +117,6 @@ if uploaded_file is not None:
         rmse = np.sqrt(mean_squared_error(y_test, predictions))
         r2 = r2_score(y_test, predictions)
         model_results[name] = {"RMSE": rmse, "R²": r2}
-        logging.info(f"{name} model trained and evaluated")
     
     st.write("### Model Comparison")
     st.write(pd.DataFrame(model_results))
-    logging.info("Model comparison displayed")

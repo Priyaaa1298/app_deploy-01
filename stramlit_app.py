@@ -1,3 +1,5 @@
+import os
+import zipfile
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -6,12 +8,13 @@ import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-import zipfile
-import os
+
+# Ensure required packages are installed
+st.write("Installing required packages...")
+os.system("pip install pandas numpy matplotlib seaborn scikit-learn pyarrow fastparquet")
 
 # Streamlit UI
 st.title("Temperature Data Analysis and Prediction")
@@ -24,9 +27,13 @@ if uploaded_file is not None:
     if file_extension == "zip":
         with zipfile.ZipFile(uploaded_file, "r") as zip_ref:
             zip_ref.extractall("./")
-            extracted_files = zip_ref.namelist()
-            csv_file = [f for f in extracted_files if f.endswith(".csv")][0]
-            df = pd.read_csv(csv_file)
+            extracted_files = [f for f in zip_ref.namelist() if f.endswith(".csv")]
+            if extracted_files:
+                csv_file = extracted_files[0]
+                df = pd.read_csv(csv_file)
+            else:
+                st.error("No CSV file found in the ZIP.")
+                st.stop()
     elif file_extension == "parquet":
         df = pd.read_parquet(uploaded_file)
     else:
@@ -67,7 +74,7 @@ if uploaded_file is not None:
     IQR = Q3 - Q1
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
-    df_cleaned = df[(df >= lower_bound) & (df <= upper_bound)]
+    df_cleaned = df[(df >= lower_bound) & (df <= upper_bound)].dropna()
     st.write("### Data after Outlier Removal")
     st.write(df_cleaned.head())
     
@@ -86,6 +93,12 @@ if uploaded_file is not None:
     # Model Training
     features = ['ambient', 'u_d', 'u_q', 'i_d', 'i_q', 'pm', 'stator_winding']
     target = 'motor_speed'
+    
+    missing_cols = [col for col in features + [target] if col not in df_filled.columns]
+    if missing_cols:
+        st.error(f"Missing columns in dataset: {missing_cols}")
+        st.stop()
+    
     X = df_filled[features]
     y = df_filled[target]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)

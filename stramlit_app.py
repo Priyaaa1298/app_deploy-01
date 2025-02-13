@@ -10,23 +10,42 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+import gdown
+import zipfile
+import os
 
 # Streamlit UI
 st.title("Temperature Data Analysis and Prediction")
 
 # Upload CSV File
-uploaded_file = st.file_uploader("https://drive.google.com/file/d/1xSVx4AGebE0C_2K9ZP9aZ2Kq9df_qBnn/view?usp=drive_link", type=["csv"])
+uploaded_file = st.file_uploader("https://drive.google.com/file/d/1xSVx4AGebE0C_2K9ZP9aZ2Kq9df_qBnn/view?usp=sharing", type=["csv", "zip", "parquet"])
 if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
+    file_extension = uploaded_file.name.split(".")[-1]
+    
+    if file_extension == "zip":
+        with zipfile.ZipFile(uploaded_file, "r") as zip_ref:
+            zip_ref.extractall("./")
+            extracted_files = zip_ref.namelist()
+            csv_file = [f for f in extracted_files if f.endswith(".csv")][0]
+            df = pd.read_csv(csv_file)
+    elif file_extension == "parquet":
+        df = pd.read_parquet(uploaded_file)
+    else:
+        df = pd.read_csv(uploaded_file)
+    
     st.write("### Data Preview")
     st.write(df.head())
     st.log("Data preview displayed")
     
+    # Optimize Data Types
+    for col in df.select_dtypes(include=['float64']).columns:
+        df[col] = df[col].astype('float32')
+    for col in df.select_dtypes(include=['int64']).columns:
+        df[col] = df[col].astype('int32')
+    
     # Data Info
     st.write("### Data Description")
     st.write(df.describe())
-    st.write(df.info())
-    st.log("Data description displayed")
     st.write("Missing Values:")
     st.write(df.isnull().sum())
     st.write("Duplicate Rows:", df.duplicated().sum())

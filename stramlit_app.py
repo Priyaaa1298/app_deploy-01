@@ -10,15 +10,18 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-import gdown
 import zipfile
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # Streamlit UI
 st.title("Temperature Data Analysis and Prediction")
 
 # Upload CSV File
-uploaded_file = st.file_uploader("https://drive.google.com/file/d/1xSVx4AGebE0C_2K9ZP9aZ2Kq9df_qBnn/view?usp=sharing", type=["csv", "zip", "parquet"])
+uploaded_file = st.file_uploader("Upload your CSV or ZIP file", type=["csv", "zip", "parquet"])
 if uploaded_file is not None:
     file_extension = uploaded_file.name.split(".")[-1]
     
@@ -35,7 +38,7 @@ if uploaded_file is not None:
     
     st.write("### Data Preview")
     st.write(df.head())
-    st.log("Data preview displayed")
+    logging.info("Data preview displayed")
     
     # Optimize Data Types
     for col in df.select_dtypes(include=['float64']).columns:
@@ -55,7 +58,7 @@ if uploaded_file is not None:
     fig, ax = plt.subplots(figsize=(16, 8))
     sns.boxplot(data=df, ax=ax)
     st.pyplot(fig)
-    st.log("Boxplot displayed")
+    logging.info("Boxplot displayed")
     
     # Min-Max Scaling
     scaler = MinMaxScaler()
@@ -63,7 +66,7 @@ if uploaded_file is not None:
     df_normalized = pd.DataFrame(normalized_data, columns=df.columns)
     st.write("### Normalized Data")
     st.write(df_normalized.head())
-    st.log("Data normalized")
+    logging.info("Data normalized")
     
     # Outlier Removal using IQR
     Q1 = df.quantile(0.25)
@@ -74,13 +77,13 @@ if uploaded_file is not None:
     df_cleaned = df[(df >= lower_bound) & (df <= upper_bound)]
     st.write("### Data after Outlier Removal")
     st.write(df_cleaned.head())
-    st.log("Outliers removed")
+    logging.info("Outliers removed")
     
     # Handling Missing Values
     df_filled = df_cleaned.fillna(df_cleaned.mean())
     st.write("### Data after Handling Missing Values")
     st.write(df_filled.isna().sum())
-    st.log("Missing values handled")
+    logging.info("Missing values handled")
     
     # Correlation Heatmap
     corr_matrix = df_filled.corr()
@@ -88,7 +91,7 @@ if uploaded_file is not None:
     fig, ax = plt.subplots(figsize=(10, 8))
     sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5, ax=ax)
     st.pyplot(fig)
-    st.log("Correlation matrix displayed")
+    logging.info("Correlation matrix displayed")
     
     # Model Training
     features = ['ambient', 'u_d', 'u_q', 'i_d', 'i_q', 'pm', 'stator_winding']
@@ -110,7 +113,7 @@ if uploaded_file is not None:
     st.write(f"Mean Squared Error: {mse:.4f}")
     st.write(f"Root Mean Squared Error: {rmse:.4f}")
     st.write(f"R² Score: {r2:.4f}")
-    st.log("Linear regression model trained and evaluated")
+    logging.info("Linear regression model trained and evaluated")
     
     # Model Selection (RandomForest & GradientBoosting)
     models = {
@@ -125,8 +128,8 @@ if uploaded_file is not None:
         rmse = np.sqrt(mean_squared_error(y_test, predictions))
         r2 = r2_score(y_test, predictions)
         model_results[name] = {"RMSE": rmse, "R²": r2}
-        st.log(f"{name} model trained and evaluated")
+        logging.info(f"{name} model trained and evaluated")
     
     st.write("### Model Comparison")
     st.write(pd.DataFrame(model_results))
-    st.log("Model comparison displayed")
+    logging.info("Model comparison displayed")

@@ -1,5 +1,6 @@
 import os
 import zipfile
+import subprocess
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,7 +15,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 
 # Ensure required packages are installed
 st.write("Installing required packages...")
-os.system("pip install pandas numpy matplotlib seaborn scikit-learn pyarrow fastparquet")
+subprocess.run(["pip", "install", "pandas", "numpy", "matplotlib", "seaborn", "scikit-learn", "pyarrow", "fastparquet"], check=True)
 
 # Streamlit UI
 st.title("Temperature Data Analysis and Prediction")
@@ -38,6 +39,10 @@ if uploaded_file is not None:
         df = pd.read_parquet(uploaded_file)
     else:
         df = pd.read_csv(uploaded_file)
+    
+    if df.empty:
+        st.error("Uploaded file is empty or invalid.")
+        st.stop()
     
     st.write("### Data Preview")
     st.write(df.head())
@@ -74,7 +79,8 @@ if uploaded_file is not None:
     IQR = Q3 - Q1
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
-    df_cleaned = df[(df >= lower_bound) & (df <= upper_bound)].dropna()
+    df_cleaned = df[(df >= lower_bound) & (df <= upper_bound)].copy()
+    df_cleaned.dropna(inplace=True)
     st.write("### Data after Outlier Removal")
     st.write(df_cleaned.head())
     
@@ -108,16 +114,18 @@ if uploaded_file is not None:
         "RandomForest": RandomForestRegressor(n_estimators=100, random_state=42),
         "GradientBoosting": GradientBoostingRegressor(n_estimators=100, random_state=42)
     }
-    
+
+    result_append = modules.append(model_results)
     model_results = []
     for name, model in models.items():
         model.fit(X_train, y_train)
         predictions = model.predict(X_test)
         rmse = np.sqrt(mean_squared_error(y_test, predictions))
         r2 = r2_score(y_test, predictions)
-        model_results.append({"Model": name, "RMSE": rmse, "R²": r2})
+        model_results.append({"Model": name, "RMSE": round(rmse, 4), "R²": round(r2, 4)})
     
     st.write("### Model Comparison")
-    st.write(pd.DataFrame(model_results))
-print("### Model Comparison Results ###")
-print(pd.DataFrame(model_results))
+    st.table(pd.DataFrame(model_results))
+    
+    print("### Model Comparison Results ###")
+    print(pd.DataFrame(model_results))

@@ -101,3 +101,16 @@ if uploaded_file:
     ax.set_xlabel("Actual")
     ax.set_ylabel("Predicted")
     st.pyplot(fig)
+
+
+    # Convert y_test to DataFrame for comparison
+    df_results = pd.DataFrame({'Actual Motor Speed': y_test, 'Predicted Motor Speed': y_pred})
+
+    # Display predicted motor speed
+    st.write("### Predicted Motor Speed")
+    st.write(df_results.head(20))  # Display first 20 rows
+
+    
+
+
+    

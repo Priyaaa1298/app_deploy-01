@@ -41,20 +41,10 @@ if uploaded_file:
     # Train-Test Split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Model Selection
-    model_choice = st.selectbox("Select a Model", ["Linear Regression", "Ridge", "Lasso", "RandomForest", "GradientBoosting"])
-    
-    if model_choice == "Linear Regression":
-        model = LinearRegression()
-    elif model_choice == "Ridge":
-        model = Ridge(alpha=1.0)
-    elif model_choice == "Lasso":
-        model = Lasso(alpha=0.1)
-    elif model_choice == "RandomForest":
-        model = RandomForestRegressor(n_estimators=50, max_depth=5, random_state=42)
-    else:
-        model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
-    
+    # Train Gradient Boosting Model
+    model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
+    model.fit(X_train, y_train)
+
     # Train Model
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)

@@ -108,7 +108,7 @@ if uploaded_file:
 
     # Display predicted motor speed
     st.write("### Predicted Motor Speed")
-    st.write(df_results.head(20))  # Display first 20 rows
+    st.write(df_results.head(10))  # Display first 20 rows
 
     
 

@@ -25,39 +25,14 @@ if uploaded_file:
     df = pd.read_csv(uploaded_file)
     st.write("### Data Overview")
     st.write(df.head())
-    
-    # Data Description
-    st.write("### Dataset Description")
-    st.write(df.describe())
-    
-    # Data Info
-    st.write("### Dataset Info")
-    st.write(df.info())
-    
-    # Missing Values
-    st.write("### Missing Values")
-    st.write(df.isnull().sum())
-    
-    # Boxplot
-    st.write("### Boxplot of Data")
-    fig, ax = plt.subplots(figsize=(16, 8))
-    sns.boxplot(data=df, ax=ax)
-    st.pyplot(fig)
+   
     
     # Min-Max Normalization
     scaler = MinMaxScaler()
     normalized_data = scaler.fit_transform(df.select_dtypes(include=[np.number]))
     normalized_df = pd.DataFrame(normalized_data, columns=df.select_dtypes(include=[np.number]).columns)
     
-    # Handling Missing Values
-    df_cleaned = df.fillna(df.mean())
-    
-    # Correlation Matrix
-    corr_matrix = df_cleaned.corr()
-    st.write("### Correlation Matrix")
-    fig, ax = plt.subplots(figsize=(10, 8))
-    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5, ax=ax)
-    st.pyplot(fig)
+   
     
     # Feature Selection
     X = df[['u_d','u_q', 'i_d', 'pm','stator_winding','torque','coolant']]
